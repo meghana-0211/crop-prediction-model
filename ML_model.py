@@ -3,7 +3,13 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import GradientBoostingClassifier
 
-df = pd.read_csv("Crop_recommendation.csv")
+def load_data(csv_data):
+    """
+    Loads the CSV data from a string.
+    """
+    from io import StringIO
+    df = pd.read_csv(StringIO(csv_data))
+    return df
 
 def create_prediction_model(df, include_light=True):
     """
@@ -74,7 +80,7 @@ def predict_crop(temp, humidity, rainfall, light_intensity=None):
     crop_name = df[df['target'] == predicted_label]['label'].iloc[0]
 
     return crop_name
-
+'''
 # Initialize the model and scaler with the dataset
 model, scaler, base_features = create_prediction_model(df)
 
@@ -84,3 +90,4 @@ print("Predicted Crop (without explicit light intensity):",
 
 print("Predicted Crop (with explicit light intensity):",
     predict_crop(temp=45, humidity=15, rainfall=50, light_intensity=260))
+    '''

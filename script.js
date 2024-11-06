@@ -1,37 +1,39 @@
-// Load Pyodide and set up the ML model
 async function loadPyodideAndModel() {
     const pyodide = await loadPyodide();
     await pyodide.loadPackage(['pandas', 'scikit-learn']);
-    
-    // Load and execute ML model code from 'ML_model.py'
+
     const response = await fetch('ML_model.py');
     const code = await response.text();
-    pyodide.runPython(code);
+    await pyodide.runPython(code);
+
+    // Fetch CSV data
+    const csvResponse = await fetch('C:\Users\Megha\OneDrive\Desktop\crop prediction\crop-prediction-model\Crop_recommendation.csv');
+    const csvData = await csvResponse.text();
+
+    // Load CSV data in Pyodide
+    pyodide.runPython(`
+        from ML_model import load_data, create_prediction_model
+        df = load_data("""${csvData}""")
+        model, scaler, base_features = create_prediction_model(df)
+    `);
 
     return pyodide;
 }
 
-let pyodideInstance;
-loadPyodideAndModel().then(instance => {
-    pyodideInstance = instance;
-});
-
 document.getElementById('inputForm').addEventListener('submit', async function(event) {
     event.preventDefault();
 
-    // Retrieve user inputs
     const humidity = parseFloat(document.getElementById('humidity').value);
     const temperature = parseFloat(document.getElementById('temperature').value);
     const rainfall = parseFloat(document.getElementById('rainfall').value);
     const lightIntensity = parseFloat(document.getElementById('lightIntensity').value);
 
     if (pyodideInstance) {
-        // Pass inputs to Python function and get prediction
         const pythonCode = `
-            predict_crop(temp=${temperature}, humidity=${humidity}, rainfall=${rainfall}, light_intensity=${lightIntensity})
+            from ML_model import predict_crop
+            predict_crop(model, scaler, base_features, temp=${temperature}, humidity=${humidity}, rainfall=${rainfall}, light_intensity=${lightIntensity})
         `;
-        
-        // Get prediction result
+
         try {
             const cropRecommendation = pyodideInstance.runPython(pythonCode);
             document.getElementById('predictionResult').innerText = `Recommended Crop: ${cropRecommendation}`;
