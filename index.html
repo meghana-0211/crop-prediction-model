@@ -1,58 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Climate-Based Crop Planner</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <!-- Pyodide script for running Python in the browser -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <title>Crop Recommendation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #8b3b4e;
+            font-family: 'Playfair Display', serif;
+            color: #f8eceb;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ffd1dc;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: #ffe6ec;
+            border: 1px solid #d8a3c0;
+            color: #4a2c2a;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .form-label {
+            color: #8b3b4e;
+            font-weight: bold;
+        }
+
+        .form-control {
+            background-color: #fff7fb;
+            border: 1px solid #e0aeb6;
+            color: #4a2c2a;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .form-control:focus {
+            border-color: #ffb3c6;
+            box-shadow: 0 0 5px rgba(255, 179, 198, 0.5);
+        }
+
+        .btn-primary {
+            background-color: #ffb3c6;
+            border-color: #ffb3c6;
+            color: #4a2c2a;
+            font-weight: bold;
+            padding: 10px 20px;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: #e08fa3;
+            border-color: #e08fa3;
+        }
+
+        .list-group-item {
+            background-color: #ffe6ec;
+            color: #4a2c2a;
+            border: none;
+        }
+
+        .list-group-item:not(:last-child) {
+            border-bottom: 1px solid #e0aeb6;
+        }
+
+        #outputContainer .card-title {
+            color: #8f3f52;
+            margin-bottom: 15px;
+        }
+
+        #outputContainer ul {
+            padding-left: 0;
+        }
+
+        #outputContainer .list-group-item {
+            background-color: #fff7fb;
+            color: #4a2c2a;
+            border: none;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        #loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container my-5">
-        <h1 class="text-center display-4 mb-4">🌱 Climate-Based Crop Planner</h1>
-        <p class="text-center lead">Enter the climate parameters below to find the best crops for your region.</p>
-        
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-8">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-5">
-                        <h4 class="card-title text-center mb-4">Climate Parameters</h4>
-                        <form id="inputForm">
-                            <div class="mb-4">
-                                <label for="humidity" class="form-label">🌤️ Humidity (%)</label>
-                                <input type="number" class="form-control" id="humidity" required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="temperature" class="form-label">🌡️ Temperature (°C)</label>
-                                <input type="number" class="form-control" id="temperature" required >
-                            </div>
-                            <div class="mb-4">
-                                <label for="rainfall" class="form-label">🌧️ Rainfall (mm)</label>
-                                <input type="number" class="form-control" id="rainfall" required>
-                            </div>
-                            <div class="mb-4">
-                                <label for="lightIntensity" class="form-label">☀️ Light Intensity (%)</label>
-                                <input type="number" class="form-control" id="lightIntensity" required >
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 py-3 mt-3" id="submitButton">
-                                Get Crop Recommendations
-                            </button>
-                        </form>
+    <div class="container">
+        <h1>Crop Recommendation</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <form id="cropForm">
+                        <div class="mb-3">
+                            <label for="temperature" class="form-label">Temperature (°C):</label>
+                            <input type="number" step="0.1" class="form-control" id="temperature" name="temperature" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="humidity" class="form-label">Humidity (%):</label>
+                            <input type="number" step="0.1" class="form-control" id="humidity" name="humidity" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rainfall" class="form-label">Rainfall (mm):</label>
+                            <input type="number" step="0.1" class="form-control" id="rainfall" name="rainfall" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="light_intensity" class="form-label">Light Intensity:</label>
+                            <input type="number" step="0.1" class="form-control" id="light_intensity" name="light_intensity" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Recommend Crop</button>
+                    </form>
+                    <div class="error-message" id="errorMessage"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loader">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-6">
+                <div id="outputContainer" style="display: none;">
+                    <div class="card">
+                        <h5 class="card-title text-center">Recommended Crop:</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item" id="result"></li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div id="outputContainer" class="row justify-content-center mt-5" style="display: none;">
-            <div class="col-md-8">
-                <div id="predictionResult" class="alert alert-success text-center"></div>
-            </div>
-        </div>
     </div>
 
-    <!-- Custom JavaScript file -->
-    <script type="module" src="script.js"></script>
+    <script>
+        document.getElementById('cropForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loader = document.getElementById('loader');
+            const outputContainer = document.getElementById('outputContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            loader.style.display = 'block';
+            outputContainer.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            const formData = {
+                temperature: parseFloat(document.getElementById('temperature').value),
+                humidity: parseFloat(document.getElementById('humidity').value),
+                rainfall: parseFloat(document.getElementById('rainfall').value),
+                light_intensity: parseFloat(document.getElementById('light_intensity').value)
+            };
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Prediction failed');
+                }
+
+                const data = await response.json();
+                document.getElementById('result').textContent = data.crop;
+                outputContainer.style.display = 'block';
+            } catch (error) {
+                errorMessage.textContent = 'An error occurred while making the prediction. Please try again.';
+                errorMessage.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

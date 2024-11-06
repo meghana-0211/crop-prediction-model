@@ -1,15 +1,14 @@
+from flask import Flask, request, jsonify, render_template
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import GradientBoostingClassifier
+from flask_cors import CORS
 
-def load_data(csv_data):
-    """
-    Loads the CSV data from a string.
-    """
-    from io import StringIO
-    df = pd.read_csv(StringIO(csv_data))
-    return df
+app = Flask(__name__)
+CORS(app)
+
+df = pd.read_csv("Crop_recommendation.csv")
 
 def create_prediction_model(df, include_light=True):
     """
@@ -37,6 +36,53 @@ def create_prediction_model(df, include_light=True):
 
     return model, scaler, base_features
 
+model, scaler, base_features = create_prediction_model(df)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.get_json()
+    
+    # Create input dataframe
+    input_data = pd.DataFrame([[
+        data['temperature'],
+        data['humidity'],
+        data['rainfall']
+    ]], columns=['temperature', 'humidity', 'rainfall'])
+
+    # Add default values for N, P, K, ph using dataset means
+    input_data['N'] = df['N'].mean()
+    input_data['P'] = df['P'].mean()
+    input_data['K'] = df['K'].mean()
+    input_data['ph'] = df['ph'].mean()
+
+    # Add light intensity
+    if 'light_intensity' in data:
+        input_data['light_intensity'] = data['light_intensity']
+    else:
+        input_data['light_intensity'] = (float(data['temperature']) * 0.7 + 
+                                       (100 - float(data['humidity'])) * 0.3)
+
+    # Ensure columns are in the same order as training data
+    input_data = input_data[base_features]
+
+    # Scale the input data
+    input_scaled = scaler.transform(input_data)
+
+    # Predict crop label
+    predicted_label = model.predict(input_scaled)[0]
+
+    # Map the label number to crop name
+    crop_name = df[df['target'] == predicted_label]['label'].iloc[0]
+
+    return jsonify({'crop': crop_name})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+'''
 def predict_crop(temp, humidity, rainfall, light_intensity=None):
     """
     Predicts crop based on given environmental parameters
@@ -80,7 +126,7 @@ def predict_crop(temp, humidity, rainfall, light_intensity=None):
     crop_name = df[df['target'] == predicted_label]['label'].iloc[0]
 
     return crop_name
-'''
+
 # Initialize the model and scaler with the dataset
 model, scaler, base_features = create_prediction_model(df)
 
@@ -89,5 +135,4 @@ print("Predicted Crop (without explicit light intensity):",
     predict_crop(temp=60, humidity=40, rainfall=150))
 
 print("Predicted Crop (with explicit light intensity):",
-    predict_crop(temp=45, humidity=15, rainfall=50, light_intensity=260))
-    '''
+    predict_crop(temp=45, humidity=15, rainfall=50, light_intensity=260))'''
