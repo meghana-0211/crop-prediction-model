@@ -4,39 +4,45 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.ensemble import GradientBoostingClassifier
 from flask_cors import CORS
+import traceback
 
 app = Flask(__name__)
 CORS(app)
 
-df = pd.read_csv("Crop_recommendation.csv")
+# Load and prepare the model (using your existing code)
+try:
+    df = pd.read_csv("Crop_recommendation.csv")
+except Exception as e:
+    print(f"Error loading CSV file: {str(e)}")
+    df = None
 
 def create_prediction_model(df, include_light=True):
-    """
-    Creates and trains the prediction model with the option to include light intensity
-    """
-    # Prepare data
-    df['target'] = df.label.astype('category').cat.codes
-    base_features = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+    try:
+        df['target'] = df.label.astype('category').cat.codes
+        base_features = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
 
-    # Add synthetic light intensity feature if requested
-    if include_light:
-        # Create synthetic light intensity based on temperature and humidity
-        # This is a simplified approximation for demonstration
-        df['light_intensity'] = (df['temperature'] * 0.7 + (100 - df['humidity']) * 0.3)
-        base_features.append('light_intensity')
+        if include_light:
+            df['light_intensity'] = (df['temperature'] * 0.7 + (100 - df['humidity']) * 0.3)
+            base_features.append('light_intensity')
 
-    X = df[base_features]
-    y = df.target
+        X = df[base_features]
+        y = df.target
 
-    # Initialize and fit scaler and model
-    scaler = MinMaxScaler()
-    X_scaled = scaler.fit_transform(X)
-    model = GradientBoostingClassifier()
-    model.fit(X_scaled, y)
+        scaler = MinMaxScaler()
+        X_scaled = scaler.fit_transform(X)
+        model = GradientBoostingClassifier(random_state=42)
+        model.fit(X_scaled, y)
 
-    return model, scaler, base_features
+        return model, scaler, base_features
+    except Exception as e:
+        print(f"Error in create_prediction_model: {str(e)}")
+        return None, None, None
 
-model, scaler, base_features = create_prediction_model(df)
+# Initialize the model
+if df is not None:
+    model, scaler, base_features = create_prediction_model(df)
+else:
+    model, scaler, base_features = None, None, None
 
 @app.route('/')
 def home():
@@ -44,41 +50,47 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json()
-    
-    # Create input dataframe
-    input_data = pd.DataFrame([[
-        data['temperature'],
-        data['humidity'],
-        data['rainfall']
-    ]], columns=['temperature', 'humidity', 'rainfall'])
+    try:
+        if model is None or scaler is None or base_features is None:
+            return jsonify({'error': 'Model not properly initialized'}), 500
 
-    # Add default values for N, P, K, ph using dataset means
-    input_data['N'] = df['N'].mean()
-    input_data['P'] = df['P'].mean()
-    input_data['K'] = df['K'].mean()
-    input_data['ph'] = df['ph'].mean()
+        # Get the data from the request
+        data = request.get_json()
+        print(f"Received data: {data}")  # Debug print
 
-    # Add light intensity
-    if 'light_intensity' in data:
-        input_data['light_intensity'] = data['light_intensity']
-    else:
-        input_data['light_intensity'] = (float(data['temperature']) * 0.7 + 
-                                       (100 - float(data['humidity'])) * 0.3)
+        # Create input dataframe
+        input_data = pd.DataFrame([[
+            df['N'].mean(),  # N
+            df['P'].mean(),  # P
+            df['K'].mean(),  # K
+            float(data['temperature']),  # temperature
+            float(data['humidity']),     # humidity
+            df['ph'].mean(),  # ph
+            float(data['rainfall']),     # rainfall
+            float(data['light_intensity'])  # light_intensity
+        ]], columns=base_features)
 
-    # Ensure columns are in the same order as training data
-    input_data = input_data[base_features]
+        print(f"Input data shape: {input_data.shape}")  # Debug print
+        print(f"Input data columns: {input_data.columns}")  # Debug print
 
-    # Scale the input data
-    input_scaled = scaler.transform(input_data)
+        # Scale the input data
+        input_scaled = scaler.transform(input_data)
+        print(f"Scaled input shape: {input_scaled.shape}")  # Debug print
 
-    # Predict crop label
-    predicted_label = model.predict(input_scaled)[0]
+        # Predict crop label
+        predicted_label = model.predict(input_scaled)[0]
+        print(f"Predicted label: {predicted_label}")  # Debug print
 
-    # Map the label number to crop name
-    crop_name = df[df['target'] == predicted_label]['label'].iloc[0]
+        # Map the label number to crop name
+        crop_name = df[df['target'] == predicted_label]['label'].iloc[0]
+        print(f"Crop name: {crop_name}")  # Debug print
 
-    return jsonify({'crop': crop_name})
+        return jsonify({'crop': crop_name})
+
+    except Exception as e:
+        print(f"Error in prediction: {str(e)}")
+        print(traceback.format_exc())  # Print the full traceback
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
