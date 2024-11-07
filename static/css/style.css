@@ -1,0 +1,112 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #8b3b4e;
+    font-family: 'Playfair Display', serif;
+    color: #f8eceb;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffe6ec;
+    border-radius: 15px;
+    border: 1px solid #d8a3c0;
+    color: #4a2c2a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #f7416b;
+    margin-bottom: 30px;
+    font-weight: bold;
+}
+
+.prediction-form {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+label {
+    font-weight: bold;
+    color: #8b3b4e;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid #e0aeb6;
+    border-radius: 5px;
+    font-size: 1rem;
+    background-color: #fff7fb;
+    color: #4a2c2a;
+    margin-bottom: 15px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #ffb3c6;
+    box-shadow: 0 0 5px rgba(255, 179, 198, 0.5);
+}
+
+.predict-btn {
+    background-color: #ffb3c6;
+    border: 1px solid #ffb3c6;
+    color: #4a2c2a;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.predict-btn:hover {
+    background-color: #e08fa3;
+    border-color: #e08fa3;
+}
+
+.result-container {
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: none;
+    background-color: #fff7fb;
+    color: #4a2c2a;
+    border: none;
+}
+
+.result-container.success {
+    display: block;
+    background-color: #ffe6ec;
+    color: #8f3f52;
+}
+
+.error-container {
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 5px;
+    text-align: center;
+    color: #dc3545;
+    background-color: #fff7fb;
+    display: none;
+    border: 1px solid #e0aeb6;
+}

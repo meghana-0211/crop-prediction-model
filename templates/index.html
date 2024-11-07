@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Prediction System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Crop Prediction System</h1>
+        <div class="prediction-form">
+            <div class="form-group">
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" id="temperature" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="humidity">Humidity (%):</label>
+                <input type="number" id="humidity" min="0" max="100" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="rainfall">Rainfall (mm):</label>
+                <input type="number" id="rainfall" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="light_intensity">Light Intensity:</label>
+                <input type="number" id="light_intensity" step="0.1" required>
+            </div>
+            <button onclick="predictCrop()" class="predict-btn">Predict Crop</button>
+        </div>
+        <div id="result" class="result-container"></div>
+        <div id="error" class="error-container"></div>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
